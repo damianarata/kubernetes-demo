@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worldcup-deployment
+  labels:
+    app: worldcup
+spec:
+  replicas: 4
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: worldcup
+  template:
+    metadata:
+      labels:
+        app: worldcup
+    spec:
+      containers:
+        - name: worldcup
+          image: rodriguezarata/worldcup:0.1
+          ports:
+          - containerPort: 80
+          env:
+            - name: champ
+              valueFrom:
+                configMapKeyRef:
+                  name: worldcup-configmap
+                  key: value
+          readinessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 1
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 1
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worldcup-service
+  labels:
+    app: worldcup
+spec:
+  selector:
+    app: worldcup
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worldcup-configmap
+data:
+  value: francia
+      
